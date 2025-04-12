@@ -16,7 +16,7 @@ export default function HomePage() {
             <div className="flex flex-col justify-center space-y-4">
               <div className="space-y-2">
                 <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none">
-                  Welcome to J02 Building
+                  Welcome to J02 Buildingyeyeye
                 </h1>
                 <p className="max-w-[600px] text-gray-500 md:text-xl dark:text-gray-400">
                   Your home, our community. The official website for residents and management of J02 Building.
