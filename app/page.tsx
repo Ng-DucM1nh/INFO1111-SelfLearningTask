@@ -5,8 +5,12 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { ArrowRight, Users, Tag, Bell, Facebook } from "lucide-react"
+import WeatherWidget from "@/components/weather-widget"
 
 export default function HomePage() {
+  // Access the environment variable
+  const buildingName = process.env.BUILDING_NAME || "J02 Building"
+
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
@@ -16,10 +20,10 @@ export default function HomePage() {
             <div className="flex flex-col justify-center space-y-4">
               <div className="space-y-2">
                 <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none">
-                  Welcome to J02 Building
+                  Welcome to {buildingName}
                 </h1>
                 <p className="max-w-[600px] text-gray-500 md:text-xl dark:text-gray-400">
-                  Your home, our community. The official website for residents and management of J02 Building.
+                  Your home, our community. The official website for residents and management of {buildingName}.
                 </p>
               </div>
               <div className="flex flex-col gap-2 min-[400px]:flex-row">
@@ -41,7 +45,7 @@ export default function HomePage() {
                 src="/building.jpg"
                 width={600}
                 height={400}
-                alt="J02 Building"
+                alt={buildingName}
                 className="rounded-lg object-cover"
                 priority
               />
@@ -50,17 +54,23 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Quick Links Section */}
+      {/* Weather and Quick Links Section */}
       <section className="w-full py-12 md:py-24 lg:py-32 bg-white dark:bg-gray-950">
         <div className="container px-4 md:px-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center">
             <div className="space-y-2">
               <h2 className="text-3xl font-bold tracking-tighter md:text-4xl">Building Resources</h2>
               <p className="max-w-[700px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed dark:text-gray-400">
-                Everything you need to know about living in J02 Building
+                Everything you need to know about living in {buildingName}
               </p>
             </div>
           </div>
+
+          {/* Weather Widget */}
+          <div className="mx-auto my-8 max-w-md">
+            <WeatherWidget />
+          </div>
+
           <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 py-12 md:grid-cols-2 lg:grid-cols-3">
             <Link href="/about">
               <Card className="h-full transition-all hover:shadow-md">
@@ -128,4 +138,3 @@ export default function HomePage() {
     </div>
   )
 }
-

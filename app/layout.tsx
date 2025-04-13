@@ -8,8 +8,8 @@ import { ThemeProvider } from "@/components/theme-provider"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata = {
-  title: "J02 Building",
-  description: "Official website for J02 Building management",
+  title: process.env.BUILDING_NAME || "J02 Building",
+  description: `Official website for ${process.env.BUILDING_NAME || "J02 Building"} management`,
     generator: 'v0.dev'
 }
 
@@ -32,7 +32,6 @@ export default function RootLayout({
     </html>
   )
 }
-
 
 
 import './globals.css'

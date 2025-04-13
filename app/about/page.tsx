@@ -5,7 +5,7 @@ import Image from "next/image"
 const committeeMembers = [
   {
     id: 1,
-    name: "Lily Bennett",
+    name: "Jane Smith",
     role: "Events Coordinator",
     image: "/committee-female1.jpg",
     bio: "Jane has been a resident for 10 years and organizes community events and activities for building residents.",
@@ -91,4 +91,3 @@ export default function AboutPage() {
     </div>
   )
 }
-
