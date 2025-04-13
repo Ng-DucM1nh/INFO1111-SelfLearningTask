@@ -9,7 +9,7 @@ import EmergencyAlert from "@/components/emergency-alert"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata = {
-  title: process.env.BUILDING_NAME || "J02 Building",
+  title: "J02 Building",
   description: `Official website for ${process.env.BUILDING_NAME || "J02 Building"} management`,
     generator: 'v0.dev'
 }
