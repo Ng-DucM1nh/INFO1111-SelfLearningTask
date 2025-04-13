@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     // For now, we'll just return a dummy response
 
     // Simulate a slight delay to make the loading state visible
-    await new Promise((resolve) => setTimeout(resolve, 500))
+    await new Promise((resolve) => setTimeout(resolve, 1000))
 
     // Return a success response
     return NextResponse.json({

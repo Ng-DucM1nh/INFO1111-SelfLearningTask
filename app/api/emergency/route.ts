@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 
 export const runtime = "edge"
 
-// This function would check for any active emergency notifications
+// This function checks for any active emergency notifications
 // for the building (fire alarms, evacuations, etc.)
 export async function GET() {
   // In a real app, this would check a database or service
