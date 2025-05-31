@@ -1,34 +1,26 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
-import { jwtVerify } from "jose"
 
 export const runtime = "edge"
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "your-secret-key-here")
-
 export async function GET() {
   try {
-    const cookieStore = cookies()
-    const token = cookieStore.get("auth-token")
+    // Get the auth cookie
+    const authCookie = cookies().get("auth")
 
-    if (!token) {
+    if (!authCookie || !authCookie.value) {
       return NextResponse.json({ authenticated: false }, { status: 401 })
     }
 
-    // Verify JWT token
-    const { payload } = await jwtVerify(token.value, JWT_SECRET)
+    // Parse the user data from the cookie
+    const userData = JSON.parse(authCookie.value)
 
     return NextResponse.json({
       authenticated: true,
-      user: {
-        id: payload.userId,
-        username: payload.username,
-        role: payload.role,
-        name: payload.name,
-      },
+      user: userData,
     })
   } catch (error) {
-    console.error("Auth verification error:", error)
-    return NextResponse.json({ authenticated: false }, { status: 401 })
+    console.error("Auth check error:", error)
+    return NextResponse.json({ authenticated: false, error: "Failed to verify authentication" }, { status: 500 })
   }
 }

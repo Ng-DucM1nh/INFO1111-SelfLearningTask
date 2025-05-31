@@ -2,9 +2,9 @@
 
 import Link from "next/link"
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Menu, X, LogIn, LogOut, Shield } from "lucide-react"
+import { Menu, X, LogIn, LogOut, Shield, User } from "lucide-react"
 
 type AppUser = {
   id: number
@@ -15,6 +15,7 @@ type AppUser = {
 
 export default function Navbar() {
   const router = useRouter()
+  const pathname = usePathname()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [buildingName, setBuildingName] = useState("J02 Building")
   const [user, setUser] = useState<AppUser | null>(null)
@@ -41,7 +42,13 @@ export default function Navbar() {
         const response = await fetch("/api/auth/me")
         if (response.ok) {
           const data = await response.json()
-          setUser(data.user)
+          if (data.authenticated) {
+            setUser(data.user)
+          } else {
+            setUser(null)
+          }
+        } else {
+          setUser(null)
         }
       } catch (error) {
         // User is not authenticated
@@ -52,13 +59,14 @@ export default function Navbar() {
     }
 
     checkAuth()
-  }, [])
+  }, [pathname]) // Re-check auth when pathname changes
 
   const handleLogout = async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" })
       setUser(null)
-      router.push("/")
+      // Force a reload to update everything
+      window.location.href = "/"
     } catch (error) {
       console.error("Logout failed:", error)
     }
@@ -92,24 +100,25 @@ export default function Navbar() {
           <Link href="/contact" className="text-sm font-medium transition-colors hover:text-primary">
             Contact
           </Link>
+          <Link href="/visitors" className="flex items-center text-sm font-medium transition-colors hover:text-primary">
+            <User className="mr-1 h-4 w-4" />
+            Visitors
+          </Link>
 
           {/* Authentication-based navigation */}
           {!authLoading && (
             <>
               {user ? (
                 <div className="flex items-center space-x-4">
-                  <Link
-                    href="/dashboard"
-                    className="flex items-center text-sm font-medium transition-colors hover:text-primary"
-                  >
+                  <div className="flex items-center text-sm font-medium">
                     {user.role === "admin" ? (
-                      <Shield className="mr-1 h-4 w-4" />
+                      <Shield className="mr-1 h-4 w-4 text-blue-600" />
                     ) : (
-                      <span className="mr-1 h-4 w-4">User</span>
+                      <User className="mr-1 h-4 w-4 text-green-600" />
                     )}
-                    {user.name}
-                  </Link>
-                  <Button variant="ghost" size="sm" onClick={handleLogout}>
+                    <span>{user.name}</span>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={handleLogout} className="flex items-center">
                     <LogOut className="mr-1 h-4 w-4" />
                     Logout
                   </Button>
@@ -168,24 +177,28 @@ export default function Navbar() {
             >
               Contact
             </Link>
+            <Link
+              href="/visitors"
+              className="flex items-center text-sm font-medium transition-colors hover:text-primary"
+              onClick={toggleMenu}
+            >
+              <User className="mr-1 h-4 w-4" />
+              Visitors
+            </Link>
 
             {/* Mobile Authentication */}
             {!authLoading && (
               <>
                 {user ? (
                   <>
-                    <Link
-                      href="/dashboard"
-                      className="flex items-center text-sm font-medium transition-colors hover:text-primary"
-                      onClick={toggleMenu}
-                    >
+                    <div className="flex items-center text-sm font-medium">
                       {user.role === "admin" ? (
-                        <Shield className="mr-1 h-4 w-4" />
+                        <Shield className="mr-1 h-4 w-4 text-blue-600" />
                       ) : (
-                        <span className="mr-1 h-4 w-4">User</span>
+                        <User className="mr-1 h-4 w-4 text-green-600" />
                       )}
-                      {user.name}
-                    </Link>
+                      <span>{user.name}</span>
+                    </div>
                     <Button variant="ghost" size="sm" onClick={handleLogout} className="justify-start">
                       <LogOut className="mr-1 h-4 w-4" />
                       Logout

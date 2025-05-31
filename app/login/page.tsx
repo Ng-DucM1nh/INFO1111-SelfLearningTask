@@ -27,8 +27,11 @@ export default function LoginPage() {
       try {
         const response = await fetch("/api/auth/me")
         if (response.ok) {
-          // User is already logged in, redirect to dashboard
-          router.push("/dashboard")
+          const data = await response.json()
+          if (data.authenticated) {
+            // User is already logged in, redirect to home
+            router.push("/")
+          }
         }
       } catch (error) {
         // User is not logged in, stay on login page
@@ -74,9 +77,12 @@ export default function LoginPage() {
       if (response.ok && data.success) {
         setMessage("Login successful! Redirecting...")
         setMessageType("success")
-        // Redirect to dashboard after successful login
+
+        // Redirect to home page after successful login
         setTimeout(() => {
-          router.push("/dashboard")
+          router.push("/")
+          // Force a reload to update the navbar
+          window.location.href = "/"
         }, 1500)
       } else {
         setMessage(data.error || "Login failed. Please try again.")
