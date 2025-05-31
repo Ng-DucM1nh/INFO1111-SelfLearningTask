@@ -16,9 +16,15 @@ const getUserFromToken = (request: NextRequest) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "your-secret-key-here")
-    return decoded as { id: number; username: string; role: string; name: string }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "your-secret-key-here") as any
+    return {
+      id: decoded.id,
+      username: decoded.username,
+      role: decoded.role,
+      name: decoded.name,
+    }
   } catch (error) {
+    console.error("JWT verification error:", error)
     return null
   }
 }
