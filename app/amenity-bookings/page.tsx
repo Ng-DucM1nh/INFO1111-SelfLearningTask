@@ -3,14 +3,13 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, Clock, MapPin, Shield, AlertCircle } from "lucide-react"
+import { Calendar, Clock, MapPin, Shield, AlertCircle, User } from "lucide-react"
 
 type Booking = {
   id: number
@@ -28,7 +27,6 @@ type Booking = {
 const amenities = ["BBQ Area", "Function Room", "Tennis Court", "Swimming Pool", "Gym", "Rooftop Garden"]
 
 export default function AmenityBookingsPage() {
-  const router = useRouter()
   const [user, setUser] = useState<any | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [bookings, setBookings] = useState<Booking[]>([])
@@ -65,12 +63,12 @@ export default function AmenityBookingsPage() {
     checkAuth()
   }, [])
 
-  // Fetch bookings
+  // Fetch bookings when user is available
   useEffect(() => {
-    if (!authLoading) {
+    if (user) {
       fetchBookings()
     }
-  }, [authLoading, user])
+  }, [user])
 
   const fetchBookings = async () => {
     if (!user) return
@@ -80,6 +78,8 @@ export default function AmenityBookingsPage() {
       if (response.ok) {
         const data = await response.json()
         setBookings(data.bookings || [])
+      } else {
+        console.error("Failed to fetch bookings")
       }
     } catch (error) {
       console.error("Failed to fetch bookings:", error)
@@ -124,6 +124,8 @@ export default function AmenityBookingsPage() {
         body: JSON.stringify(formData),
       })
 
+      const data = await response.json()
+
       if (response.ok) {
         setMessage("Booking request submitted successfully!")
         setMessageType("success")
@@ -135,8 +137,7 @@ export default function AmenityBookingsPage() {
         })
         fetchBookings()
       } else {
-        const errorData = await response.json()
-        setMessage(errorData.error || "Failed to submit booking request")
+        setMessage(data.error || "Failed to submit booking request")
         setMessageType("error")
       }
     } catch (error) {
@@ -162,7 +163,8 @@ export default function AmenityBookingsPage() {
         setMessageType("success")
         fetchBookings()
       } else {
-        setMessage("Failed to update booking status")
+        const data = await response.json()
+        setMessage(data.error || "Failed to update booking status")
         setMessageType("error")
       }
     } catch (error) {
@@ -230,103 +232,105 @@ export default function AmenityBookingsPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Booking Form */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Calendar className="mr-2 h-5 w-5" />
-                Book Amenity
-              </CardTitle>
-              {!user && (
-                <p className="text-sm text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">
-                  You can explore the booking options below, but you must be logged in to submit a request.
-                </p>
-              )}
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Label htmlFor="amenity">Amenity</Label>
-                  <Select
-                    value={formData.amenity}
-                    onValueChange={(value) => setFormData({ ...formData, amenity: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select an amenity" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {amenities.map((amenity) => (
-                        <SelectItem key={amenity} value={amenity}>
-                          {amenity}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+        <div className={`grid gap-8 ${user?.role === "admin" ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-2"}`}>
+          {/* Booking Form - Only show for non-admin users */}
+          {user?.role !== "admin" && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Calendar className="mr-2 h-5 w-5" />
+                  Book Amenity
+                </CardTitle>
+                {!user && (
+                  <p className="text-sm text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">
+                    You can explore the booking options below, but you must be logged in to submit a request.
+                  </p>
+                )}
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <Label htmlFor="amenity">Amenity</Label>
+                    <Select
+                      value={formData.amenity}
+                      onValueChange={(value) => setFormData({ ...formData, amenity: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select an amenity" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {amenities.map((amenity) => (
+                          <SelectItem key={amenity} value={amenity}>
+                            {amenity}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div>
-                  <Label htmlFor="booking_date">Date</Label>
-                  <Input
-                    id="booking_date"
-                    type="date"
-                    min={getMinDate()}
-                    value={formData.booking_date}
-                    onChange={(e) => setFormData({ ...formData, booking_date: e.target.value })}
-                    required
-                  />
-                </div>
+                  <div>
+                    <Label htmlFor="booking_date">Date</Label>
+                    <Input
+                      id="booking_date"
+                      type="date"
+                      min={getMinDate()}
+                      value={formData.booking_date}
+                      onChange={(e) => setFormData({ ...formData, booking_date: e.target.value })}
+                      required
+                    />
+                  </div>
 
-                <div>
-                  <Label htmlFor="booking_time">Time</Label>
-                  <Input
-                    id="booking_time"
-                    type="time"
-                    value={formData.booking_time}
-                    onChange={(e) => setFormData({ ...formData, booking_time: e.target.value })}
-                    required
-                  />
-                </div>
+                  <div>
+                    <Label htmlFor="booking_time">Time</Label>
+                    <Input
+                      id="booking_time"
+                      type="time"
+                      value={formData.booking_time}
+                      onChange={(e) => setFormData({ ...formData, booking_time: e.target.value })}
+                      required
+                    />
+                  </div>
 
-                <div>
-                  <Label htmlFor="duration">Duration (hours)</Label>
-                  <Select
-                    value={formData.duration}
-                    onValueChange={(value) => setFormData({ ...formData, duration: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select duration" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[1, 2, 3, 4, 5, 6, 7, 8].map((hour) => (
-                        <SelectItem key={hour} value={hour.toString()}>
-                          {hour} hour{hour > 1 ? "s" : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <div>
+                    <Label htmlFor="duration">Duration (hours)</Label>
+                    <Select
+                      value={formData.duration}
+                      onValueChange={(value) => setFormData({ ...formData, duration: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select duration" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[1, 2, 3, 4, 5, 6, 7, 8].map((hour) => (
+                          <SelectItem key={hour} value={hour.toString()}>
+                            {hour} hour{hour > 1 ? "s" : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Submitting..." : "Submit Booking Request"}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? "Submitting..." : "Submit Booking Request"}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Bookings List */}
           {user && (
-            <Card>
+            <Card className={user.role === "admin" ? "max-w-4xl mx-auto" : ""}>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   {user.role === "admin" ? (
                     <>
-                      <Shield className="mr-2 h-5 w-5" />
+                      <Shield className="mr-2 h-5 w-5 text-blue-600" />
                       All Resident Bookings (Past 7 Days)
                     </>
                   ) : (
                     <>
-                      <MapPin className="mr-2 h-5 w-5" />
+                      <User className="mr-2 h-5 w-5 text-green-600" />
                       My Bookings (Past 7 Days)
                     </>
                   )}
@@ -334,11 +338,15 @@ export default function AmenityBookingsPage() {
               </CardHeader>
               <CardContent>
                 {bookings.length === 0 ? (
-                  <p className="text-gray-500 text-center py-4">No bookings found</p>
+                  <p className="text-gray-500 text-center py-8">
+                    {user.role === "admin"
+                      ? "No booking requests found from the past 7 days"
+                      : "You haven't made any booking requests in the past 7 days"}
+                  </p>
                 ) : (
                   <div className="space-y-4">
                     {bookings.map((booking) => (
-                      <div key={booking.id} className="border rounded-lg p-4 space-y-2">
+                      <div key={booking.id} className="border rounded-lg p-4 space-y-3">
                         <div className="flex justify-between items-start">
                           <div>
                             <div className="flex items-center space-x-2">
@@ -347,7 +355,9 @@ export default function AmenityBookingsPage() {
                               {getStatusBadge(booking.status)}
                             </div>
                             {user.role === "admin" && (
-                              <p className="text-sm text-gray-600 mt-1">Resident: {booking.resident_name}</p>
+                              <p className="text-sm text-gray-600 mt-1">
+                                Resident: {booking.resident_name} ({booking.resident_username})
+                              </p>
                             )}
                           </div>
                         </div>
@@ -371,22 +381,41 @@ export default function AmenityBookingsPage() {
 
                         <div className="text-xs text-gray-500">Submitted: {formatDate(booking.created_at)}</div>
 
-                        {user.role === "admin" && booking.status === "pending" && (
-                          <div className="flex space-x-2 pt-2">
+                        {user.role === "admin" && (
+                          <div className="flex space-x-2 pt-2 border-t">
                             <Button
                               size="sm"
                               onClick={() => updateBookingStatus(booking.id, "accepted")}
-                              className="bg-green-600 hover:bg-green-700"
+                              className={`${
+                                booking.status === "accepted"
+                                  ? "bg-green-600 hover:bg-green-700"
+                                  : "bg-green-100 text-green-800 hover:bg-green-200"
+                              }`}
+                              disabled={booking.status === "accepted"}
                             >
-                              Accept
+                              {booking.status === "accepted" ? "✓ Accepted" : "Accept"}
                             </Button>
                             <Button
                               size="sm"
-                              variant="destructive"
                               onClick={() => updateBookingStatus(booking.id, "rejected")}
+                              className={`${
+                                booking.status === "rejected"
+                                  ? "bg-red-600 hover:bg-red-700"
+                                  : "bg-red-100 text-red-800 hover:bg-red-200"
+                              }`}
+                              disabled={booking.status === "rejected"}
                             >
-                              Reject
+                              {booking.status === "rejected" ? "✗ Rejected" : "Reject"}
                             </Button>
+                            {booking.status !== "pending" && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => updateBookingStatus(booking.id, "pending")}
+                              >
+                                Reset to Pending
+                              </Button>
+                            )}
                           </div>
                         )}
                       </div>
