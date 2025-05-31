@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useState, useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Menu, X, LogIn, LogOut, Shield, User, Phone } from "lucide-react"
+import { Menu, X, LogIn, LogOut, Shield, User, Calendar } from "lucide-react"
 
 type AppUser = {
   id: number
@@ -105,14 +105,14 @@ export default function Navbar() {
             Visitors
           </Link>
 
-          {/* Contact Info - Only for logged-in users */}
+          {/* Amenity Bookings - Only for logged-in users */}
           {!authLoading && user && (
             <Link
-              href="/contact-info"
+              href="/amenity-bookings"
               className="flex items-center text-sm font-medium transition-colors hover:text-primary"
             >
-              <Phone className="mr-1 h-4 w-4" />
-              Contact Info
+              <Calendar className="mr-1 h-4 w-4" />
+              Amenities
             </Link>
           )}
 
@@ -197,15 +197,15 @@ export default function Navbar() {
               Visitors
             </Link>
 
-            {/* Contact Info - Only for logged-in users */}
+            {/* Amenity Bookings - Only for logged-in users */}
             {!authLoading && user && (
               <Link
-                href="/contact-info"
+                href="/amenity-bookings"
                 className="flex items-center text-sm font-medium transition-colors hover:text-primary"
                 onClick={toggleMenu}
               >
-                <Phone className="mr-1 h-4 w-4" />
-                Contact Info
+                <Calendar className="mr-1 h-4 w-4" />
+                Amenities
               </Link>
             )}
 
