@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useState, useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Menu, X, LogIn, LogOut, Shield, User } from "lucide-react"
+import { Menu, X, LogIn, LogOut, Shield, User, FileText } from "lucide-react"
 
 type AppUser = {
   id: number
@@ -104,6 +104,13 @@ export default function Navbar() {
             <User className="mr-1 h-4 w-4" />
             Visitors
           </Link>
+          <Link
+            href="/meeting-minutes"
+            className="flex items-center text-sm font-medium transition-colors hover:text-primary"
+          >
+            <FileText className="mr-1 h-4 w-4" />
+            Meeting Minutes
+          </Link>
 
           {/* Authentication-based navigation */}
           {!authLoading && (
@@ -184,6 +191,14 @@ export default function Navbar() {
             >
               <User className="mr-1 h-4 w-4" />
               Visitors
+            </Link>
+            <Link
+              href="/meeting-minutes"
+              className="flex items-center text-sm font-medium transition-colors hover:text-primary"
+              onClick={toggleMenu}
+            >
+              <FileText className="mr-1 h-4 w-4" />
+              Meeting Minutes
             </Link>
 
             {/* Mobile Authentication */}
