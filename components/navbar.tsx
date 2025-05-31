@@ -104,17 +104,13 @@ export default function Navbar() {
             <User className="mr-1 h-4 w-4" />
             Visitors
           </Link>
-
-          {/* Amenity Bookings - Only for logged-in users */}
-          {!authLoading && user && (
-            <Link
-              href="/amenity-bookings"
-              className="flex items-center text-sm font-medium transition-colors hover:text-primary"
-            >
-              <Calendar className="mr-1 h-4 w-4" />
-              Amenities
-            </Link>
-          )}
+          <Link
+            href="/amenity-bookings"
+            className="flex items-center text-sm font-medium transition-colors hover:text-primary"
+          >
+            <Calendar className="mr-1 h-4 w-4" />
+            Amenities
+          </Link>
 
           {/* Authentication-based navigation */}
           {!authLoading && (
@@ -196,18 +192,14 @@ export default function Navbar() {
               <User className="mr-1 h-4 w-4" />
               Visitors
             </Link>
-
-            {/* Amenity Bookings - Only for logged-in users */}
-            {!authLoading && user && (
-              <Link
-                href="/amenity-bookings"
-                className="flex items-center text-sm font-medium transition-colors hover:text-primary"
-                onClick={toggleMenu}
-              >
-                <Calendar className="mr-1 h-4 w-4" />
-                Amenities
-              </Link>
-            )}
+            <Link
+              href="/amenity-bookings"
+              className="flex items-center text-sm font-medium transition-colors hover:text-primary"
+              onClick={toggleMenu}
+            >
+              <Calendar className="mr-1 h-4 w-4" />
+              Amenities
+            </Link>
 
             {/* Mobile Authentication */}
             {!authLoading && (
