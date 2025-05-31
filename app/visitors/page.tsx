@@ -9,21 +9,21 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle2, AlertCircle, Shield, User, Calendar } from "lucide-react"
+import { CheckCircle2, AlertCircle, Shield, User, Calendar, Trash2 } from "lucide-react"
 
 type VisitorRequest = {
-  id: string
-  residentUsername: string
-  residentName: string
-  visitorName: string
-  visitorPhone: string
-  visitDate: string
-  visitTime: string
+  id: number
+  resident_username: string
+  resident_name: string
+  visitor_name: string
+  visitor_phone: string
+  visit_date: string
+  visit_time: string
   purpose: string
   status: "pending" | "approved" | "rejected"
-  committeeNotes: string
-  createdAt: string
-  updatedAt: string
+  committee_notes: string
+  created_at: string
+  updated_at: string
 }
 
 type AuthUser = {
@@ -141,7 +141,7 @@ export default function VisitorsPage() {
     }
   }
 
-  const handleStatusUpdate = async (requestId: string, newStatus: string, notes = "") => {
+  const handleStatusUpdate = async (requestId: number, newStatus: string, notes = "") => {
     try {
       const response = await fetch(`/api/visitor-requests/${requestId}`, {
         method: "PUT",
@@ -163,6 +163,28 @@ export default function VisitorsPage() {
     }
   }
 
+  const handleDeleteRequest = async (requestId: number) => {
+    if (!confirm("Are you sure you want to delete this request?")) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/visitor-requests/${requestId}`, {
+        method: "DELETE",
+      })
+
+      if (response.ok) {
+        fetchRequests() // Refresh the requests list
+        setMessage({ type: "success", text: "Request deleted successfully" })
+      } else {
+        const data = await response.json()
+        setMessage({ type: "error", text: data.error })
+      }
+    } catch (error) {
+      setMessage({ type: "error", text: "Failed to delete request" })
+    }
+  }
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "approved":
@@ -174,9 +196,12 @@ export default function VisitorsPage() {
     }
   }
 
-  const formatDateTime = (date: string, time: string) => {
-    const dateObj = new Date(`${date}T${time}`)
-    return dateObj.toLocaleString()
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString()
+  }
+
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString()
   }
 
   if (authLoading) {
@@ -333,23 +358,39 @@ export default function VisitorsPage() {
                       <div key={request.id} className="border rounded-lg p-4">
                         <div className="flex items-start justify-between mb-3">
                           <div>
-                            <h3 className="font-semibold">{request.visitorName}</h3>
+                            <h3 className="font-semibold">{request.visitor_name}</h3>
                             {user.role === "admin" && (
                               <p className="text-sm text-gray-600">
-                                Requested by: {request.residentName} ({request.residentUsername})
+                                Requested by: {request.resident_name} ({request.resident_username})
                               </p>
                             )}
-                            <p className="text-sm text-gray-600">Phone: {request.visitorPhone}</p>
+                            <p className="text-sm text-gray-600">Phone: {request.visitor_phone}</p>
                           </div>
-                          {getStatusBadge(request.status)}
+                          <div className="flex items-center gap-2">
+                            {getStatusBadge(request.status)}
+                            {/* Delete button for pending requests */}
+                            {(user.role === "admin" ||
+                              (user.role === "resident" &&
+                                request.resident_username === user.username &&
+                                request.status === "pending")) && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleDeleteRequest(request.id)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4 mb-3 text-sm">
                           <div>
-                            <strong>Visit Date:</strong> {new Date(request.visitDate).toLocaleDateString()}
+                            <strong>Visit Date:</strong> {formatDate(request.visit_date)}
                           </div>
                           <div>
-                            <strong>Visit Time:</strong> {request.visitTime}
+                            <strong>Visit Time:</strong> {request.visit_time}
                           </div>
                         </div>
 
@@ -358,17 +399,17 @@ export default function VisitorsPage() {
                           <p className="text-sm text-gray-600 mt-1">{request.purpose}</p>
                         </div>
 
-                        {request.committeeNotes && (
+                        {request.committee_notes && (
                           <div className="mb-3">
                             <strong className="text-sm">Committee Notes:</strong>
-                            <p className="text-sm text-gray-600 mt-1">{request.committeeNotes}</p>
+                            <p className="text-sm text-gray-600 mt-1">{request.committee_notes}</p>
                           </div>
                         )}
 
                         <div className="flex items-center justify-between text-xs text-gray-500">
-                          <span>Submitted: {new Date(request.createdAt).toLocaleString()}</span>
-                          {request.updatedAt !== request.createdAt && (
-                            <span>Updated: {new Date(request.updatedAt).toLocaleString()}</span>
+                          <span>Submitted: {formatDateTime(request.created_at)}</span>
+                          {request.updated_at !== request.created_at && (
+                            <span>Updated: {formatDateTime(request.updated_at)}</span>
                           )}
                         </div>
 

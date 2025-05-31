@@ -1,16 +1,16 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
+import { neon } from "@neondatabase/serverless"
 
-// Simple in-memory storage for demo (in production, use a real database)
-let visitorRequests: any[] = []
+const sql = neon(process.env.DATABASE_URL!)
 
 export async function GET() {
   try {
     // Clean up expired requests (older than 7 days)
-    const sevenDaysAgo = new Date()
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-
-    visitorRequests = visitorRequests.filter((request) => new Date(request.createdAt) > sevenDaysAgo)
+    await sql`
+      DELETE FROM visitor_requests 
+      WHERE created_at < NOW() - INTERVAL '7 days'
+    `
 
     // Get auth cookie
     const authCookie = cookies().get("auth")
@@ -21,14 +21,27 @@ export async function GET() {
 
     const userData = JSON.parse(authCookie.value)
 
-    // Filter requests based on user role
-    let filteredRequests = visitorRequests
-    if (userData.role === "resident") {
-      filteredRequests = visitorRequests.filter((request) => request.residentUsername === userData.username)
+    // Fetch requests based on user role
+    let requests
+    if (userData.role === "admin") {
+      // Admin sees all requests from the past 7 days
+      requests = await sql`
+        SELECT * FROM visitor_requests 
+        WHERE created_at >= NOW() - INTERVAL '7 days'
+        ORDER BY created_at DESC
+      `
+    } else {
+      // Residents see only their own requests from the past 7 days
+      requests = await sql`
+        SELECT * FROM visitor_requests 
+        WHERE resident_username = ${userData.username}
+        AND created_at >= NOW() - INTERVAL '7 days'
+        ORDER BY created_at DESC
+      `
     }
 
     return NextResponse.json({
-      requests: filteredRequests,
+      requests: requests,
       userRole: userData.role,
       username: userData.username,
     })
@@ -63,28 +76,36 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Visit date and time cannot be in the past" }, { status: 400 })
     }
 
-    // Create new request
-    const newRequest = {
-      id: Date.now().toString(),
-      residentUsername: userData.username,
-      residentName: userData.name,
-      visitorName,
-      visitorPhone,
-      visitDate,
-      visitTime,
-      purpose,
-      status: "pending",
-      committeeNotes: "",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
-
-    visitorRequests.push(newRequest)
+    // Insert new request into database
+    const newRequest = await sql`
+      INSERT INTO visitor_requests (
+        resident_username, 
+        resident_name, 
+        visitor_name, 
+        visitor_phone, 
+        visit_date, 
+        visit_time, 
+        purpose,
+        status,
+        committee_notes
+      ) VALUES (
+        ${userData.username},
+        ${userData.name || userData.username},
+        ${visitorName},
+        ${visitorPhone},
+        ${visitDate},
+        ${visitTime},
+        ${purpose},
+        'pending',
+        ''
+      )
+      RETURNING *
+    `
 
     return NextResponse.json({
       success: true,
       message: "Visitor request submitted successfully",
-      request: newRequest,
+      request: newRequest[0],
     })
   } catch (error) {
     console.error("Error creating visitor request:", error)
