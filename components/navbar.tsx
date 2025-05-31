@@ -2,17 +2,26 @@
 
 import Link from "next/link"
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Menu, X, LogIn, UserPlus } from "lucide-react"
+import { Menu, X, LogIn, LogOut, Shield } from "lucide-react"
+
+type AppUser = {
+  id: number
+  username: string
+  role: string
+  name: string
+}
 
 export default function Navbar() {
+  const router = useRouter()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [buildingName, setBuildingName] = useState("J02 Building")
+  const [user, setUser] = useState<AppUser | null>(null)
+  const [authLoading, setAuthLoading] = useState(true)
 
   // Fetch the building name on the client side
   useEffect(() => {
-    // This is a workaround to access env vars in client components
-    // In a real app, you might want to use an API route or pass this as a prop
     fetch("/api/config")
       .then((res) => res.json())
       .then((data) => {
@@ -24,6 +33,36 @@ export default function Navbar() {
         console.error("Failed to fetch building name:", err)
       })
   }, [])
+
+  // Check authentication status
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch("/api/auth/me")
+        if (response.ok) {
+          const data = await response.json()
+          setUser(data.user)
+        }
+      } catch (error) {
+        // User is not authenticated
+        setUser(null)
+      } finally {
+        setAuthLoading(false)
+      }
+    }
+
+    checkAuth()
+  }, [])
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" })
+      setUser(null)
+      router.push("/")
+    } catch (error) {
+      console.error("Logout failed:", error)
+    }
+  }
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
@@ -53,14 +92,39 @@ export default function Navbar() {
           <Link href="/contact" className="text-sm font-medium transition-colors hover:text-primary">
             Contact
           </Link>
-          <Link href="/visitors" className="flex items-center text-sm font-medium transition-colors hover:text-primary">
-            <UserPlus className="mr-1 h-4 w-4" />
-            Visitors
-          </Link>
-          <Link href="/login" className="flex items-center text-sm font-medium transition-colors hover:text-primary">
-            <LogIn className="mr-1 h-4 w-4" />
-            Log In
-          </Link>
+
+          {/* Authentication-based navigation */}
+          {!authLoading && (
+            <>
+              {user ? (
+                <div className="flex items-center space-x-4">
+                  <Link
+                    href="/dashboard"
+                    className="flex items-center text-sm font-medium transition-colors hover:text-primary"
+                  >
+                    {user.role === "admin" ? (
+                      <Shield className="mr-1 h-4 w-4" />
+                    ) : (
+                      <span className="mr-1 h-4 w-4">User</span>
+                    )}
+                    {user.name}
+                  </Link>
+                  <Button variant="ghost" size="sm" onClick={handleLogout}>
+                    <LogOut className="mr-1 h-4 w-4" />
+                    Logout
+                  </Button>
+                </div>
+              ) : (
+                <Link
+                  href="/login"
+                  className="flex items-center text-sm font-medium transition-colors hover:text-primary"
+                >
+                  <LogIn className="mr-1 h-4 w-4" />
+                  Log In
+                </Link>
+              )}
+            </>
+          )}
         </nav>
 
         {/* Mobile Menu Button */}
@@ -104,22 +168,41 @@ export default function Navbar() {
             >
               Contact
             </Link>
-            <Link
-              href="/visitors"
-              className="flex items-center text-sm font-medium transition-colors hover:text-primary"
-              onClick={toggleMenu}
-            >
-              <UserPlus className="mr-1 h-4 w-4" />
-              Visitors
-            </Link>
-            <Link
-              href="/login"
-              className="flex items-center text-sm font-medium transition-colors hover:text-primary"
-              onClick={toggleMenu}
-            >
-              <LogIn className="mr-1 h-4 w-4" />
-              Log In
-            </Link>
+
+            {/* Mobile Authentication */}
+            {!authLoading && (
+              <>
+                {user ? (
+                  <>
+                    <Link
+                      href="/dashboard"
+                      className="flex items-center text-sm font-medium transition-colors hover:text-primary"
+                      onClick={toggleMenu}
+                    >
+                      {user.role === "admin" ? (
+                        <Shield className="mr-1 h-4 w-4" />
+                      ) : (
+                        <span className="mr-1 h-4 w-4">User</span>
+                      )}
+                      {user.name}
+                    </Link>
+                    <Button variant="ghost" size="sm" onClick={handleLogout} className="justify-start">
+                      <LogOut className="mr-1 h-4 w-4" />
+                      Logout
+                    </Button>
+                  </>
+                ) : (
+                  <Link
+                    href="/login"
+                    className="flex items-center text-sm font-medium transition-colors hover:text-primary"
+                    onClick={toggleMenu}
+                  >
+                    <LogIn className="mr-1 h-4 w-4" />
+                    Log In
+                  </Link>
+                )}
+              </>
+            )}
           </nav>
         </div>
       )}

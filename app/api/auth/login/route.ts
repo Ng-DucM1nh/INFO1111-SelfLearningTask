@@ -1,26 +1,77 @@
 import { NextResponse } from "next/server"
+import { SignJWT } from "jose"
 
 export const runtime = "edge"
 
+// Hardcoded user accounts
+const users = [
+  {
+    id: 1,
+    username: "admin",
+    password: "thegodlyadmin",
+    role: "admin",
+    name: "Administrator",
+  },
+  {
+    id: 2,
+    username: "resident",
+    password: "powerlessresident",
+    role: "resident",
+    name: "Resident User",
+  },
+]
+
+// Secret key for JWT (in production, use environment variable)
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "your-secret-key-here")
+
 export async function POST(request: Request) {
   try {
-    // Parse the request body
     const body = await request.json()
     const { username, password } = body
 
-    // In a real application, you would validate credentials here
-    // For now, we'll just return a dummy response
+    // Find user with matching credentials
+    const user = users.find((u) => u.username === username && u.password === password)
 
-    // Simulate a slight delay to make the loading state visible
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    if (!user) {
+      return NextResponse.json({ success: false, error: "Invalid username or password" }, { status: 401 })
+    }
 
-    // Return a success response
-    return NextResponse.json({
-      success: true,
-      message: "This is a dummy login. No actual authentication occurred.",
+    // Create JWT token
+    const token = await new SignJWT({
+      userId: user.id,
+      username: user.username,
+      role: user.role,
+      name: user.name,
     })
+      .setProtectedHeader({ alg: "HS256" })
+      .setIssuedAt()
+      .setExpirationTime("7d") // Token expires in 7 days
+      .sign(JWT_SECRET)
+
+    // Create response
+    const response = NextResponse.json({
+      success: true,
+      message: "Login successful",
+      user: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        name: user.name,
+      },
+    })
+
+    // Set HTTP-only cookie with the token
+    response.cookies.set("auth-token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: "/",
+    })
+
+    return response
   } catch (error) {
-    // Return an error response
-    return NextResponse.json({ success: false, error: "Invalid request" }, { status: 400 })
+    console.error("Login error:", error)
+    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 })
   }
 }

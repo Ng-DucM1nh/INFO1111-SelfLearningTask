@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { InfoIcon } from "lucide-react"
+import { InfoIcon, CheckCircle2 } from "lucide-react"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -18,7 +18,25 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState("")
+  const [messageType, setMessageType] = useState<"error" | "success">("error")
   const [systemStatus, setSystemStatus] = useState({ acceptingLogins: true, message: "" })
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch("/api/auth/me")
+        if (response.ok) {
+          // User is already logged in, redirect to dashboard
+          router.push("/dashboard")
+        }
+      } catch (error) {
+        // User is not logged in, stay on login page
+      }
+    }
+
+    checkAuth()
+  }, [router])
 
   // GET request to check if the system is accepting logins
   useEffect(() => {
@@ -53,14 +71,20 @@ export default function LoginPage() {
 
       const data = await response.json()
 
-      if (response.ok) {
-        setMessage(data.message || "Login successful!")
-        // In a real app, you would redirect or update auth state here
+      if (response.ok && data.success) {
+        setMessage("Login successful! Redirecting...")
+        setMessageType("success")
+        // Redirect to dashboard after successful login
+        setTimeout(() => {
+          router.push("/dashboard")
+        }, 1500)
       } else {
         setMessage(data.error || "Login failed. Please try again.")
+        setMessageType("error")
       }
     } catch (error) {
       setMessage("An error occurred. Please try again later.")
+      setMessageType("error")
     } finally {
       setIsLoading(false)
     }
@@ -82,9 +106,15 @@ export default function LoginPage() {
           )}
 
           {message && (
-            <Alert className="mb-4">
-              <InfoIcon className="h-4 w-4" />
-              <AlertDescription>{message}</AlertDescription>
+            <Alert className={`mb-4 ${messageType === "success" ? "bg-green-50" : "bg-red-50"}`}>
+              {messageType === "success" ? (
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+              ) : (
+                <InfoIcon className="h-4 w-4 text-red-600" />
+              )}
+              <AlertDescription className={messageType === "success" ? "text-green-600" : "text-red-600"}>
+                {message}
+              </AlertDescription>
             </Alert>
           )}
 
@@ -116,6 +146,13 @@ export default function LoginPage() {
               />
             </div>
           </form>
+
+          {/* Demo credentials */}
+          <div className="mt-4 rounded-lg bg-gray-50 p-3 text-sm">
+            <p className="font-medium text-gray-700">Demo Credentials:</p>
+            <p className="text-gray-600">Admin: admin / thegodlyadmin</p>
+            <p className="text-gray-600">Resident: resident / powerlessresident</p>
+          </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
           <Button className="w-full" onClick={handleSubmit} disabled={isLoading || !systemStatus.acceptingLogins}>
